@@ -1,0 +1,89 @@
+table calendario
+	lineageTag: 0d482862-8695-4720-b667-2962546151a8
+	dataCategory: Time
+
+	column Data
+		dataType: dateTime
+		isKey
+		formatString: dd/mm/yy
+		lineageTag: e19fa490-bac6-47da-9fcc-04052ea70729
+		summarizeBy: none
+		sourceColumn: Data
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isDateTimeCustom":true}
+
+	column Ano
+		dataType: int64
+		formatString: 0
+		lineageTag: b877387b-7fab-4dcf-91a6-b67b4500b533
+		summarizeBy: none
+		sourceColumn: Ano
+
+		annotation SummarizationSetBy = User
+
+	column MesAno
+		dataType: string
+		lineageTag: 5bcb536c-ee95-494b-8d28-b98af266c8ea
+		summarizeBy: none
+		sourceColumn: MesAno
+		sortByColumn: MesInicio
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column MesInicio
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 3f9b29e3-e2f7-4e8c-8839-a229dc37b1f4
+		summarizeBy: none
+		sourceColumn: MesInicio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition calendario = m
+		mode: import
+		queryGroup: Dimensões
+		source = ```
+				let
+				    dataInicial = data_inicial, 
+				    dataFinal = data_final, 
+				    
+				    datas = List.Dates(
+				        dataInicial, 
+				        Duration.Days(dataFinal-dataInicial) + 1, 
+				        #duration(1, 0, 0, 0)
+				    ),
+				
+				    calendario = #table(
+				        type table[
+				            Data = date,
+				            Ano = Int64.Type,
+				            MesAno = text,
+				            MesInicio = date
+				        ],
+				        List.Transform(
+				            datas,
+				            each {
+				                _,
+				                Date.Year(_),
+				                Date.ToText(_, [Format="MMM/yy", Culture="pt-BR"]),
+				                Date.StartOfMonth(_)
+				            }
+				        )
+				    )
+				
+				in
+				    calendario
+				```
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table
+
